@@ -62,7 +62,7 @@ GET /riders/search?latitude={ค่า latitude}&longitude={ค่า longitude}
 ## เกณฑ์การประเมิน
 
 - [ ] API สามารถใช้งานได้ตาม Requirement
-- [ ] ความเป็นระเบียบของโค้ด (Clean Code)
+- [ ] ความเป็นระเบียบของโค้ด (Clean Code + Best Practice)
 - [ ] การจัดวางโครงสร้างโปรเจค (Project Structure)
 - [ ] ความระเอียดของ API Documentation
 
@@ -70,6 +70,7 @@ GET /riders/search?latitude={ค่า latitude}&longitude={ค่า longitude}
 
 - [ ] เน่ืองด้วยการพัฒนาในปปัจุบันจำเป็นต้องรองรับการใช้งานด้วย Container ดังนั้นหากสามารถใช้ Docker ในการสร้าง Container ของ API ของเราได้จะได้คะแนนพิเศษ
 - [ ] การทำ Unit Test สำหรับ API [Jest](https://docs.nestjs.com/fundamentals/testing)
+- [ ] เก็บ Configuration ของ Database ในไฟล์ .env
 
 ## ส่งงาน
 
