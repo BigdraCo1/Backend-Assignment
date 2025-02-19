@@ -53,6 +53,12 @@ GET /riders/:riderId/locations
 POST /riders/:riderId/locations
 ```
 
+5. สร้ง API สำหรับการค้นหา Rider ทั้งหมด โดยให้ตำแหน่งของ Rider อยู่ในรัศมี 5 กิโลเมตร จากตำแหน่งที่กำหนด (Optional คะแนนพิเศษ)
+
+```
+GET /riders/search?latitude={ค่า latitude}&longitude={ค่า longitude}
+```
+
 ## เกณฑ์การประเมิน
 
 - [ ] API สามารถใช้งานได้ตาม Requirement
