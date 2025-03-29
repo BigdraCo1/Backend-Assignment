@@ -20,7 +20,7 @@ export class CreateRiderDto {
   email: string;
 
   @ApiProperty({ example: '+1234567890'})
-  @Length(3,10)
+  @Length(3,15)
   @IsNotEmpty()
   @IsString()
   phoneNumber: string;
