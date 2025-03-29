@@ -1,3 +1,5 @@
+import { EARTH_RADIUS, EARTH_KM_PER_DEGREES } from "@/shared/constants";
+
 export class DistanceCalculator {
   static calculateDistance(
     lat1: number,
@@ -5,7 +7,6 @@ export class DistanceCalculator {
     lat2: number,
     lon2: number,
   ): number {
-    const R = 6371; // Radius of the Earth in kilometers
     const dLat = this.degreesToRadians(lat2 - lat1);
     const dLon = this.degreesToRadians(lon2 - lon1);
     const a =
@@ -15,10 +16,19 @@ export class DistanceCalculator {
         Math.sin(dLon / 2) *
         Math.sin(dLon / 2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    return R * c; // Distance in kilometers
+    return EARTH_RADIUS * c;
   }
   
   static degreesToRadians(degrees: number): number {
     return degrees * (Math.PI / 180);
+  }
+
+  static kmToDegrees(km: number, latitude?: number): { latitudeDelta: number, longitudeDelta: number } {
+    const latitudeDelta = km / EARTH_KM_PER_DEGREES; 
+    const longitudeDelta = latitude !== undefined
+      ? km / (EARTH_KM_PER_DEGREES * Math.cos(this.degreesToRadians(latitude)))
+      : latitudeDelta;
+    
+    return { latitudeDelta, longitudeDelta };
   }
 }

@@ -1,6 +1,20 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  Query,
+} from '@nestjs/common';
 import { RiderService } from './rider.service';
-import { CreateRiderDto, UpdateRiderDto, LocationDto, LocationQueryDto } from './dto';
+import {
+  CreateRiderDto,
+  UpdateRiderDto,
+  LocationDto,
+  LocationQueryDto,
+} from './dto';
 import { ApiTags, ApiQuery, ApiParam, ApiOperation } from '@nestjs/swagger';
 
 @ApiTags('riders')
@@ -18,6 +32,22 @@ export class RiderController {
   @ApiOperation({ summary: 'Get all riders' })
   findAll() {
     return this.riderService.findAll();
+  }
+
+  @Get('search')
+  @ApiOperation({ summary: 'Search for riders near a specific location' })
+  @ApiQuery({
+    name: 'latitude',
+    description: 'Latitude between -90 and 90',
+    type: Number,
+  })
+  @ApiQuery({
+    name: 'longitude',
+    description: 'Longitude between -180 and 180',
+    type: Number,
+  })
+  searchRiderNearBy(@Query() query: LocationQueryDto) {
+    return this.riderService.searchRiderNearBy(query.latitude, query.longitude);
   }
 
   @Get(':id')
@@ -53,17 +83,5 @@ export class RiderController {
   @ApiOperation({ summary: 'Add rider location' })
   upsertRiderLocation(@Param('id') id: string, @Body() location: LocationDto) {
     return this.riderService.upsertRiderLocation(id, location);
-  }
-
-  @Get(':id/search')
-  @ApiOperation({ summary: 'Search for riders near a specific location' })
-  @ApiParam({ name: 'id', description: 'Rider ID' })
-  @ApiQuery({ name: 'latitude', description: 'Latitude between -90 and 90', type: Number })
-  @ApiQuery({ name: 'longitude', description: 'Longitude between -180 and 180', type: Number })
-  searchRiderNearBy(
-    @Param('id') id: string, 
-    @Query() query: LocationQueryDto
-  ) {
-    return this.riderService.searchRiderNearBy(id, query.latitude, query.longitude);
   }
 }

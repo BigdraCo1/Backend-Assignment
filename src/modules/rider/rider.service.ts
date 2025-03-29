@@ -2,16 +2,18 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateRiderDto, UpdateRiderDto, LocationDto } from './dto';
 import { DatabaseService } from '@/config/database/database.service';
 import { RiderMapper, DistanceCalculator } from '@/common/helper';
-import { Rider } from '@prisma/client';
+import { Rider, Location } from '@prisma/client';
 
 @Injectable()
 export class RiderService {
-
   constructor(private readonly databaseService: DatabaseService) {}
 
   async create(createRiderDto: CreateRiderDto): Promise<Rider> {
     const data = RiderMapper.toCreateInput(createRiderDto);
-    return this.databaseService.rider.create({ data }); 
+    return this.databaseService.rider.create({
+      data,
+      include: { location: true },
+    });
   }
 
   async findAll(): Promise<Rider[]> {
@@ -20,54 +22,56 @@ export class RiderService {
     });
   }
 
-  async findOne(id: string): Promise<Rider | null> {
-    return this.databaseService.rider.findUnique({
-      where: { id: id },
-      include: { location: true },
-    });
-  }
-
-  async update(id: string, updateRiderDto: UpdateRiderDto): Promise<Rider | null> { 
-    const riderExists = await this.databaseService.rider.findUnique({
-      where: { id },
-    });
-    if (!riderExists) {
-      return null;
-    }
-    const riderData = RiderMapper.toUpdateInput(updateRiderDto);
-    return this.databaseService.rider.update({
-      where: { id },
-      data: riderData,
-      include: { location: true },
-    });
-  }
-
-  async remove(id: string) {
-    return this.databaseService.rider.delete({
-      where: { id },
-    });
-  }
-
-  async findRiderLocations(id: string): Promise<LocationDto | null> {
+  async findOne(id: string): Promise<Rider> {
     const rider = await this.databaseService.rider.findUnique({
       where: { id },
-      include: { location: true }
+      include: { location: true },
     });
 
     if (!rider) {
       throw new NotFoundException(`Rider with ID ${id} not found`);
     }
 
+    return rider;
+  }
+
+  async update(id: string, updateRiderDto: UpdateRiderDto): Promise<Rider> {
+    await this.validateRiderExists(id);
+
+    return this.databaseService.rider.update({
+      where: { id },
+      data: RiderMapper.toUpdateInput(updateRiderDto),
+      include: { location: true },
+    });
+  }
+
+  async remove(id: string): Promise<Rider> {
+    await this.validateRiderExists(id);
+
+    return this.databaseService.rider.delete({
+      where: { id },
+    });
+  }
+
+  async findRiderLocations(id: string): Promise<Location | null> {
+    const rider = await this.databaseService.rider.findUnique({
+      where: { id },
+      include: { location: true },
+    });
+
+    if (!rider) {
+      throw new NotFoundException(`Rider with ID ${id} not found`);
+    }
+
+    if (!rider.location) {
+      throw new NotFoundException(`Location not found for rider with ID ${id}`);
+    }
+
     return rider.location;
   }
 
-  async upsertRiderLocation(id: string, location: LocationDto): Promise<Rider | null> {
-    const riderExists = await this.databaseService.rider.findUnique({
-      where: { id },
-    });
-    if (!riderExists) {
-      return null;
-    }
+  async upsertRiderLocation(id: string, location: LocationDto): Promise<Rider> {
+    await this.validateRiderExists(id);
 
     const locationData = {
       latitude: location.latitude,
@@ -88,32 +92,52 @@ export class RiderService {
     });
   }
 
-  async searchRiderNearBy(id: string, latitude: number, longitude: number): Promise<Rider[]> {
-    const rider = await this.databaseService.rider.findUnique({
-      where: { id },
-      include: { location: true },
-    });
-
-    if (!rider) {
-      throw new NotFoundException(`Rider with ID ${id} not found`);
-    }
+  async searchRiderNearBy(
+    latitude: number,
+    longitude: number,
+    searchRadius = 5,
+  ): Promise<Rider[]> {
+    const { latitudeDelta, longitudeDelta } = DistanceCalculator.kmToDegrees(
+      searchRadius,
+      latitude,
+    );
 
     const riders = await this.databaseService.rider.findMany({
       where: {
         location: {
           latitude: {
-            gte: latitude - 0.1,
-            lte: latitude + 0.1,
+            gte: latitude - latitudeDelta,
+            lte: latitude + latitudeDelta,
           },
           longitude: {
-            gte: longitude - 0.1,
-            lte: longitude + 0.1,
+            gte: longitude - longitudeDelta,
+            lte: longitude + longitudeDelta,
           },
         },
       },
       include: { location: true },
     });
 
-    return riders.filter(r => r.id !== id && DistanceCalculator.calculateDistance(r.location?.latitude, r.location?.longitude, latitude, longitude ) <= 5);
+    return riders.filter(
+      (rider) =>
+        rider.location &&
+        DistanceCalculator.calculateDistance(
+          latitude,
+          longitude,
+          rider.location.latitude,
+          rider.location.longitude,
+        ) <= searchRadius,
+    );
+  }
+
+  private async validateRiderExists(id: string): Promise<void> {
+    const riderExists = await this.databaseService.rider.findUnique({
+      where: { id },
+      select: { id: true },
+    });
+
+    if (!riderExists) {
+      throw new NotFoundException(`Rider with ID ${id} not found`);
+    }
   }
 }
