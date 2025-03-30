@@ -70,6 +70,51 @@ $ mau deploy
 
 With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
 
+## Docker Deployment
+
+Follow these steps to run the application using Docker:
+
+### 1. Create a volume for database persistence
+
+```bash
+$ docker volume create db-data
+```
+
+### 2. Build the migration image
+
+```bash
+$ docker build --target migration -t my-app-migration .
+```
+
+### 3. Run database migrations
+
+```bash
+$ docker run --rm -v db-data:/app/prisma -e DATABASE_URL=file:/app/prisma/dev.db my-app-migration
+```
+
+### 4. Fix line endings for Windows users
+
+For Windows users, you need to fix line endings in the entrypoint.sh file:
+
+```powershell
+# Run this in PowerShell, not in the script itself
+>> (Get-Content -Raw .\entrypoint.sh) -replace "`r`n", "`n" | Set-Content -NoNewline .\entrypoint.sh
+```
+
+### 5. Build the production image
+
+```bash
+$ docker build -t my-app-production .
+```
+
+### 6. Run the application container
+
+```bash
+$ docker run -p 8000:8000 -v db-data:/app/prisma -e DATABASE_URL=file:/app/prisma/dev.db my-app-production
+```
+
+After completing these steps, your application will be running in a Docker container on port 8000.
+
 ## Resources
 
 Check out a few resources that may come in handy when working with NestJS:
